@@ -1,0 +1,885 @@
+openapi: 3.0.4
+info:
+  title: CodeX - REST API
+  description: This is the OpenAPI specification of the *REST-API* interface provided by the *CodeX Server* component.
+  license:
+    name: 'License: GPLv3'
+    url: 'https://www.gnu.org/licenses/gpl-3.0.txt'
+  version: 1.0.0
+tags:
+  - name: Authentication
+    description: 'Endpoints concerned with authentication, account-validation and security settings.'
+  - name: Conversations
+    description: Endpoints concerned with conversations.
+  - name: Quota
+    description: Endpoints oncerned with the quota-system.
+  - name: Analytics
+    description: Endpoints oncerned with the analytics.
+  - name: Account
+    description: 'Endpoints concerned with account-data, i.e. username, email or LLM-configurations.'
+paths:
+  /auth/google/login:
+    get:
+      tags:
+        - Authentication
+      summary: Login via the google identity provider.
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Could not authenticate
+  /auth/google/callback:
+    get:
+      tags:
+        - Authentication
+      summary: Callback for the google identity provider.
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Could not authenticate
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email/username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: 'Invalid request input (e.g., missing password or invalid email format)'
+        '401':
+          description: Invalid credentials
+      security: []
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid request input
+        '409':
+          description: Email or username already exists
+      security: []
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token using a refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Refresh token missing or invalid format
+        '401':
+          description: Refresh token expired or not recognized
+      security: []
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout from one or all sessions
+      description: |
+        If a refresh token is provided as a query parameter, only that session is logged out.
+        If none is provided, **all** sessions for the user are logged out.
+      parameters:
+        - name: refresh_token
+          in: query
+          required: false
+          description: 'The refresh token to invalidate. If omitted, all sessions will be terminated.'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Successfully logged out (no content)
+        '400':
+          description: Invalid refresh token format
+        '401':
+          description: 'Refresh token was invalid i.e. expired, not found, etc'
+  /auth/request-password-reset:
+    post:
+      tags:
+        - Authentication
+      summary: Request a password-reset token to a specified email address.
+      description: |
+        Sends a password-reset token to the specified email-address, if an account exists for that email address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+      responses:
+        '204':
+          description: Password-reset token sent
+      security: []
+  /auth/submit-password-reset:
+    post:
+      tags:
+        - Authentication
+      summary: Submit password-reset token and set a new password
+      description: |
+        Accepts the password-reset token sent via email and a new password.
+        Does not require the user to be logged in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetSubmitRequest'
+      responses:
+        '204':
+          description: Password successfully reset (no content)
+        '400':
+          description: Invalid request
+        '401':
+          description: Reset token invalid or expired
+      security: []
+  /auth/request-email-verification:
+    post:
+      tags:
+        - Authentication
+      summary: Request an email-verification token
+      description: |
+        Sends an email-verification token to the authenticated user's email.
+      responses:
+        '204':
+          description: Verification email sent
+        '401':
+          description: User not authenticated
+        '409':
+          description: Email is already verified
+  /auth/submit-email-verification:
+    post:
+      tags:
+        - Authentication
+      summary: Submit an email-verification token
+      description: |
+        Accepts the email-verification token sent to the user's email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationSubmitRequest'
+      responses:
+        '204':
+          description: Email successfully verified
+        '400':
+          description: Invalid request
+        '401':
+          description: Verification token invalid or expired
+      security: []
+  /account:
+    get:
+      tags:
+        - Account
+      summary: Get current authenticated user's account data
+      description: Returns the account information for the currently authenticated user.
+      responses:
+        '200':
+          description: Account data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          description: User not authenticated
+    put:
+      tags:
+        - Account
+      summary: Update account email and username
+      description: |
+        Updates the authenticated user's email and username.
+
+        - **Both fields must be provided**.  
+        - If the email is changed:
+          - User will be logged out from all sessions.
+          - Account will be set to unverified.
+          - A new email-verification email will be sent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+      responses:
+        '204':
+          description: Account updated successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated
+        '409':
+          description: Email or username already taken
+
+  /account/profile-picture:
+    put:
+      tags:
+        - Account
+      summary: Updates the profile picture of the user that is authenticated
+      description: Updates the profile picture of the user that is authenticated
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '204':
+          description: Profile Picture updated successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated
+    get:
+      tags:
+        - Account
+      summary: Get the authenticated user's profile picture
+      description: Returns the profile picture for the authenticated user. The response is a binary image.
+      responses:
+        '200':
+          description: Profile picture returned successfully.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: User not authenticated
+
+  /account/llm-configurations:
+    post:
+      tags:
+        - Account
+      summary: Add a new LLM configuration to the account
+      description: Adds a new LLM configuration for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LLMConfigurationRequest'
+      responses:
+        '201':
+          description: LLM configuration added successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated
+  '/account/llm-configurations/{id}':
+    delete:
+      tags:
+        - Account
+      summary: Delete a specific LLM configuration
+      description: Deletes an LLM configuration of the authenticated user by its id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the LLM configuration to delete
+          schema:
+            type: string
+      responses:
+        '204':
+          description: LLM configuration deleted successfully
+        '401':
+          description: User not authenticated
+        '404':
+          description: LLM configuration not found
+    put:
+      tags:
+        - Account
+      summary: Update a specific LLM configuration
+      description: Updates an existing LLM configuration of the authenticated user by its id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the LLM configuration to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LLMConfigurationRequest'
+      responses:
+        '200':
+          description: LLM configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMConfigurationResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated
+        '404':
+          description: LLM configuration not found
+  /quota:
+    get:
+      tags:
+        - Quota
+      summary: Get current quota configuration
+      description: Returns the current quota configuration.
+      responses:
+        '200':
+          description: Quota configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaConfig'
+    put:
+      tags:
+        - Quota
+      summary: Update quota configuration
+      description: Updates the quota limits for members and admins. Only for admins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuotaConfig'
+      responses:
+        '200':
+          description: Quota configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaConfig'
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated or authorized
+  /analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get current analytics
+      description: Returns the analytics. Only for Admins.
+      responses:
+        '200':
+          description: Analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+        '401':
+          description: User not authenticatedor authorized
+  /conversations:
+    get:
+      tags:
+        - Conversations
+      summary: Get all conversations for the authenticated user
+      description: |
+        Returns a list of all conversations for the current user.
+      responses:
+        '200':
+          description: List of conversations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationResponse'
+        '401':
+          description: User not authenticated
+    post:
+      tags:
+        - Conversations
+      summary: Create a new conversation
+      description: |
+        Starts a new conversation with the given message, LLM configuration, and target language.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationRequest'
+      responses:
+        '201':
+          description: Conversation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated
+        '429':
+          description: Quota exceeded
+  '/conversations/{id}':
+    put:
+      tags:
+        - Conversations
+      summary: Update conversation metadata
+      description: |
+        Updates the `name` and `pinned` attributes of a conversation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the conversation to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConversationRequest'
+      responses:
+        '200':
+          description: Conversation updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated
+        '403':
+          description: User does not have permission to update this conversation or conversation now found
+    delete:
+      tags:
+        - Conversations
+      summary: Delete a conversation
+      description: |
+        Deletes the conversation with the given Id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id of the conversation to delete
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Conversation deleted successfully
+        '401':
+          description: User not authenticated
+        '403':
+          description: User does not have permission to delete this conversation or conversation not found
+  '/conversations/{id}/messages':
+    post:
+      tags:
+        - Conversations
+      summary: Add a follow-up message to an existing conversation
+      description: |
+        Adds a new message to an existing conversation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Id of the target conversation
+      responses:
+        '200':
+          description: Message added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated
+        '403':
+          description: User does not have access to this conversation or conversation was not found
+        '429':
+          description: Quota exceeded
+    put:
+      tags:
+        - Conversations
+      summary: Regenerate a message.
+      description: Resend a message by providing a new prompt.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Id of the target conversation
+      responses:
+        '200':
+          description: Message changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          format: username
+        password:
+          type: string
+      required:
+        - password
+    SignupRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          format: username
+        password:
+          type: string
+      required:
+        - email
+        - username
+        - password
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          format: jwt
+        refresh_token:
+          type: string
+          format: uuid
+      required:
+        - access_token
+        - refresh_token
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          format: uuid
+      required:
+        - refresh_token
+    PasswordResetSubmitRequest:
+      type: object
+      properties:
+        reset_token:
+          type: string
+          description: Password-reset token received via email
+        new_password:
+          type: string
+          description: The new password to set
+      required:
+        - reset_token
+        - new_password
+    PasswordResetRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Mail address of the account whose password should be reset.
+      required:
+        - email
+    EmailVerificationSubmitRequest:
+      type: object
+      properties:
+        verification_token:
+          type: string
+          format: uuid
+          description: Email verification token sent to the user
+      required:
+        - verification_token
+    UpdateAccountRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: New email for the account
+        username:
+          type: string
+          description: New username for the account
+      required:
+        - email
+        - username
+    AccountResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The id of the user
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        is_admin:
+          type: boolean
+          description: Whether the user has admin privileges
+        is_verified:
+          type: boolean
+          description: Whether the email of the user as been verified
+        auth_via_google:
+          type: boolean
+          description: Whether the account was created via the google-oauth provider
+        created_at:
+          type: string
+          format: iso-8601 instant
+          description: The instant when the object was created
+        llm_configurations:
+          type: array
+          description: List of user's LLM configurations
+          items:
+            $ref: '#/components/schemas/LLMConfigurationResponse'
+      required:
+        - id
+        - email
+        - username
+        - is_admin
+        - auth_via_google
+        - llm_configurations
+        - created_at
+    LLMConfigurationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The id of the configuration
+        name:
+          type: string
+          description: Name of the LLM configuration
+        api_url:
+          type: string
+          format: uri
+          description: URL to the OpenAI API endpoint
+        api_key_set:
+          type: boolean
+          description: Whether the llm-config has an associated API-key.
+      required:
+        - id
+        - name
+        - api_url
+    LLMConfigurationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the LLM configuration
+        api_url:
+          type: string
+          format: uri
+          description: URL to the OpenAI API endpoint
+        api_key:
+          type: string
+          description: The API-KEY to access the llm-model
+      required:
+        - name
+        - api_url
+    QuotaConfig:
+      type: object
+      properties:
+        member:
+          type: integer
+          minimum: 0
+          description: Quota for regular members
+        admin:
+          type: integer
+          minimum: 0
+          description: Quota for admin users
+      required:
+        - member
+        - admin
+    AnalyticsResponse:
+      type: object
+      properties:
+        requests_today:
+          type: integer
+          minimum: 0
+          description: Number of requests made today
+        requests_this_month:
+          type: integer
+          minimum: 0
+          description: Number of requests made this month
+      required:
+        - requests_today
+        - requests_this_month
+    TargetLanguage:
+      type: string
+      description: Possible values hen a language is required
+      enum:
+        - spice_netlist
+        - python
+        - java
+    ConversationRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          description: User-entered prompt for the initial message
+        llm_model_config_id:
+          type: string
+          description: Id of the LLM-configuration to use
+        target_language:
+          $ref: '#/components/schemas/TargetLanguage'
+        name:
+          type: string
+          description: Name of the conversation
+      required:
+        - message
+        - llm_model_config_id
+        - target_language
+        - name
+    MessageRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          description: User-entered prompt for the message
+      required:
+        - message
+    MessageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the message
+        message:
+          type: string
+          description: User-entered prompt
+        generation_millis:
+          type: integer
+          description: How long the response took to generate
+        response:
+          type: string
+          description: Raw LLM-generated response
+        response_secondary:
+          type: string
+          description: Preprocesses response from the LLM by the server
+        created_at:
+          type: string
+          format: iso-8601 instant
+          description: The instant when the object was created
+      required:
+        - id
+        - message
+        - generation_millis
+        - response
+        - created_at
+    ConversationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the conversation
+        name:
+          type: string
+          description: Name of the conversation
+        pinned:
+          type: boolean
+          description: Whether the conversation is pinned
+        llm_model_config_id:
+          type: string
+          description: Id of the LLM-configuration
+        created_at:
+          type: string
+          format: iso-8601 instant
+          description: The instant when the object was created
+        target_language:
+          $ref: '#/components/schemas/TargetLanguage'
+        messages:
+          type: array
+          description: List of messages in the conversation
+          items:
+            $ref: '#/components/schemas/MessageResponse'
+      required:
+        - id
+        - conversation_id
+        - llm_model_config_id
+        - target_language
+        - messages
+        - id
+        - name
+        - created_at
+    UpdateConversationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name for the conversation
+        pinned:
+          type: boolean
+          description: Whether the conversation is pinned
+      required:
+        - name
+        - pinned
+  securitySchemes:
+    JWT:
+      name: access_token
+      type: apiKey
+      in: header
+security:
+  - {}
+  - JWT: []

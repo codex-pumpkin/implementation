@@ -1,0 +1,105 @@
+%!TEX root = ../Implementation.tex
+
+\chapter{Deviations from the Design Document}
+
+This chapter describes the deviations between the originally specified architecture of the \textit{Codex} system and the architecture that was ultimately implemented. Both the server architecture and the client architecture largely preserved their fundamental structural concepts. However, during implementation, several refinements and pragmatic adaptations were introduced to improve maintainability, robustness, testability, and scalability.
+
+The following sections present architectural adjustments and implementation-level refinements for both server and client components.
+
+\section{System-Wide}
+\subsection{Role Based Authorization}
+In the implementations, the roles for \textbf{Anonymous User} and \textbf{Unverified user} were merged. 
+This decision was made when looking at the users in $G_{unverified} \setminus G_{anonymous}$, that did not have any more modelled permissions that anonymous users.
+
+\section{Server}
+
+\subsection{Consolidation of Business Interfaces}
+
+The original server design defined a highly granular Business Layer consisting of several explicit interfaces, including \texttt{IInferenceManager}, \texttt{IAuthManager}, \texttt{IUserInfoManager}, \texttt{ISystemManager}, and \texttt{IPromptManager}. Each interface was specified as an independent contract with clearly separated responsibilities.
+
+During implementation, the system evolved toward a domain-oriented structure. Instead of strictly mirroring each UML interface as an individual component, business logic was grouped by cohesive domains such as authentication, conversations, quota management, and analytics.
+
+\textbf{Motivation.}  
+This consolidation improved cohesion and reduced unnecessary fragmentation. Closely related responsibilities were maintained within unified domain modules, simplifying navigation and maintainability without violating the layered architecture.
+
+\subsection{Distributed Inference Orchestration}
+
+The original design introduced \texttt{IInferenceManager} as a central orchestration engine responsible for semantic retrieval, prompt construction, AI interaction, validation, and conversation state management.
+
+In the implemented system, these responsibilities were distributed across collaborating components:
+\begin{itemize}
+    \item Conversation management in the business layer,
+    \item Semantic retrieval in the persistence layer,
+    \item AI interaction via a dedicated AI client,
+    \item Validation logic in specialized utilities.
+\end{itemize}
+
+\textbf{Motivation.}  
+Distributing orchestration responsibilities prevents the emergence of a monolithic component and enhances modularity. While deviating from the concept of a single inference interface, this structure improves testability and separation of concerns.
+
+\subsection{Adaptation of the Repository Abstraction}
+
+The design specified a large \texttt{IEntityRepository} interface aggregating all data-access responsibilities.
+
+In practice, the persistence layer was implemented with structured repository abstractions organized by functional domains. Rather than relying on a single monolithic interface, responsibilities were logically decomposed while preserving abstraction boundaries between business and persistence layers.
+
+\textbf{Motivation.}  
+This decomposition improves cohesion and reduces coupling. It represents a structural refinement that strengthens maintainability without changing the conceptual data access abstraction.
+
+\subsection{Server: Security as Service-Level Dependency}
+
+Originally, authentication and token lifecycle logic were exclusively assigned to \texttt{IAuthManager} in the business layer.
+
+In the implemented architecture, JWT validation and role checks are provided as reusable service-layer dependencies injected directly into API endpoints.
+
+\textbf{Motivation.}  
+Integrating security at the API layer improves clarity and reduces repetitive validation logic inside business managers. The separation between authentication logic and endpoint-level enforcement becomes clearer and more declarative.
+
+\subsection{Centralized Error Translation}
+
+The original design defined domain-specific exceptions but did not specify a centralized HTTP error mapping strategy.
+
+The implemented architecture introduces a unified error-handling component at the service layer, mapping internal exceptions to consistent HTTP responses.
+
+\textbf{Motivation.}  
+Centralized error translation improves API consistency and clearly separates internal error semantics from external response contracts.
+
+\section{Client}
+
+\subsection{Strengthening of Authentication Architecture}
+
+The original \texttt{AuthService} defined reactive account state and explicit login and refresh methods.
+
+During implementation, additional internal mechanisms were introduced:
+\begin{itemize}
+    \item Separation of access and refresh tokens,
+    \item Introduction of a \texttt{TokenStore} abstraction,
+    \item Automatic refresh during application initialization,
+    \item Centralized concurrency control for refresh operations.
+\end{itemize}
+
+\textbf{Motivation.}  
+These refinements improve session persistence, testability, and user experience without altering the external service interface.
+
+\subsection{DTO Formalization and Mapping Layer}
+
+The original design intentionally separated DTOs and Domain-Models. This concept was retained and formalized further during implementation through dedicated DTO directories and mapping utilities.
+
+\textbf{Motivation.}  
+This strict separation isolates backend contract changes to the mapping layer and protects domain logic and ViewModels from structural API changes.
+
+\section{Overall Assessment}
+
+Despite structural deviations from the exact interface definitions in the design document, both server and client architectures remain faithful to the original conceptual model:
+\begin{itemize}
+    \item Clear layered server architecture,
+    \item Consistent application of dependency inversion,
+    \item Network abstraction on the client,
+    \item Separation of DTOs and Domain-Models,
+    \item Reactive services as single sources of truth,
+    \item ViewModel-based UI encapsulation.
+\end{itemize}
+
+The deviations introduced during implementation primarily represent pragmatic refinements aimed at improving maintainability, robustness, modularity, and production readiness.
+
+Rather than weakening the architectural integrity of Codex, these adjustments resulted in a more cohesive, scalable, and resilient system while preserving the conceptual foundations established in the original design document.

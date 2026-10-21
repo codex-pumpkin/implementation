@@ -1,0 +1,121 @@
+\chapter{Artifacts}
+The final result of the Implementation phase is a shared git-repository for the server and client.
+
+\section{Structure}
+The repository consists of three files.
+\begin{itemize}
+    \item \textit{server/}: Directory containing a fastapi-project for the server
+    \item \textit{client/}: Directory containing an angular-project for the client
+\end{itemize}
+
+\section{Usage}
+To use the generated artifacts, the following needs to be done:
+\begin{enumerate}
+    \item Build image for the server
+    \item Build image for the client
+    \item Configure the external services
+    \item Start a server container
+    \item Start a client container
+\end{enumerate}
+
+The following section portrays an example usage using docker-compose.
+
+\subsection{Example Usage}
+\subsection{Step 1: Building the images}
+To build the images, following sequence of commands can be used on a unix-like system:
+\begin{minted}[gobble=4,frame=single,linenos]{shell}
+    # Building the client image
+    user@host:~$ cd client
+    user@host:~$ docker build . -t codex/client
+
+    # Building the server image
+    user@host:~$ cd ./../server
+    user@host:~$ docker build . -t codex/server
+\end{minted}
+
+After this, the local docker system contains the images \texttt{codex/client} and \texttt{codex/client}.
+
+\subsection{Step 2: Configuring the external services}
+
+The following shows a \texttt{docker-compose.yml} file that declares a PostgreSQL database and a ChromaDB instance.
+
+\begin{minted}[gobble=4,frame=single,linenos]{yaml}
+    services:
+        db:
+            image: postgres:16-alpine
+            environment:
+                POSTGRES_DB: codex
+                POSTGRES_USER: codex_user
+                POSTGRES_PASSWORD: codex_password
+            ports:
+                - "5432:5432"
+            volumes:
+                - ./data/postgres:/var/lib/postgresql/data
+
+        chroma:
+            image: chromadb/chroma:latest
+            ports:
+                - "8001:8000"
+            environment:
+                IS_PERSISTENT: "TRUE"
+                PERSIST_DIRECTORY: "/chroma/data"
+                CHROMA_DB_IMPL: duckdb+parquet
+            volumes:
+                - ./data/chroma:/data
+\end{minted}
+
+\subsection{Step 3: Configuring the server}
+
+The following shows the service configuration for the server in the same \texttt{docker-compose.yml} file as above.
+
+\begin{minted}[gobble=4,frame=single,linenos]{yaml}
+      server:
+        image: codex/server
+        depends_on:
+            - db
+            - chroma
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./data/documents:/app/docs
+            - ./data/pictures:/app/pictures
+        environment:
+            APP_MAIL: <mail>
+            MAIL_PASSWORD: <mail-password>
+            APP_MAIL_SMTP_SERVER: <smtp-host>
+            APP_MAIL_SMTP_PORT: <smtp-port>
+            JWT_SECRET: example-secret-here
+            CLIENT_SECRET: <google-client-secret-here>
+            CLIENT_ID: <google-client-id-here>
+            CLIENT_BASE_URL: <url-of-client>
+            DATABASE_URL: "postgresql://codex_user:codex_password@db:5432/codex"
+            CHROMA_PORT: 8000
+            CHROMA_HOST: chroma
+            ADMIN_EMAIL: admin@example.com
+            ADMIN_USERNAME: admin
+            ADMIN_PASSWORD: admin
+\end{minted}
+
+\subsection{Step 4: Configuring the client}
+
+The following shows the service configuration for the client in the same \texttt{docker-compose.yml} file as above.
+
+\begin{minted}[gobble=4,frame=single,linenos]{yaml}
+        client:
+            image: codex/client
+            depends_on:
+                - server
+            ports:
+                - "8080:80"
+            environment:
+                SERVER_BASE_URL: <url-of-server>
+                GOOGLE_CLIENT_ID: <google-client-id-here>
+\end{minted}
+
+\subsection{Step 5: Starting the containers}
+
+To start all containers, the following bash-command is used: 
+
+\begin{minted}[gobble=4,frame=single,linenos]{shell}
+    user@host:~$ docker compose up
+\end{minted}

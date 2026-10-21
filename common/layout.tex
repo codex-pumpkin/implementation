@@ -1,0 +1,114 @@
+% Declare document wide classes
+\documentclass[
+    11pt,                   % Default font size
+  DIV12,
+    oneside,                % One-sided document
+    titlepage,              % Has a specific page for the title
+    parskip=half,           % Spacing between paragraphs
+    headings=normal,        % Smaller headings size
+    captions=tableheading,
+    final                   % Document is marked as final
+]{scrreprt}               %
+
+% Include the packages
+\input{common/packages}
+
+% Geometric specific settings
+\geometry{
+    paper=a4paper,
+    top=25mm,
+    left=25mm,
+    right=25mm,
+    bottom=45mm,
+    pdftex
+  }
+
+% Page layout
+\onehalfspace        % 1.5x spacing
+
+\pagestyle{scrheadings}
+
+% Header and footer on new section pages
+\renewcommand*{\chapterpagestyle}{scrheadings}
+
+% Font size of headers
+\renewcommand{\headfont}{\normalfont}
+
+% Custom colors
+\definecolor{tuRed}{cmyk}{1.0,0.0,0.6,0.0}
+
+% Header config
+\setheadsepline{1pt}[\color{tuRed}]
+\setlength{\headheight}{21mm}        % Header height
+\ihead{\large{\textsc{CodeX: Natural-Language to Structured Code Generation}}\\    % Text in left box
+       \small{Requirements Analysis}}
+\chead{}                            % Text in center box
+
+% Footer config
+\setfootsepline{1pt}[\color{tuRed}]
+\cfoot{}                            % Text in center box
+\ofoot{\pagemark}                    % Page counter in right box
+
+
+
+% Custom definitions for refs with custom text
+% Black magic. Don't touch, it will break
+\makeatletter
+\def\namedlabel#1#2{\begingroup
+#2
+\def\@currentlabel{#2}
+\phantomsection\label{#1}\endgroup
+}
+\makeatother
+
+
+% Utility command for setting a counter based on a ref
+\newcommand{\refsetcounter}[2]{\setcounter{#1}{#2}\addtocounter{#1}{-1}\refstepcounter{#1}}
+
+% Environment for product functions
+\newcounter{functioncount} 
+\newenvironment{function}[2]{\refsetcounter{functioncount}{#1}\large\textbf{\sffamily{#2 }}\namedlabel{F#1}{$\langle F#1\rangle$}\normalsize\begin{description}\setlength{\itemsep}{-5pt}}{\end{description}}
+
+% Environment for data (what is this for?)
+\newcounter{datacount} 
+\newenvironment{data}[2]{\refsetcounter{datacount}{#1}\textbf{#2} \namedlabel{D#1}{$\langle D#1\rangle$}\\}{}
+
+% Commands for criteria
+
+\newcommand{\should}[1]{\textlangle RS#1\textrangle}
+\newcommand{\must}[1]{\textlangle RM#1\textrangle}
+\newcommand{\could}[1]{\textlangle RC#1\textrangle}
+
+\newcommand{\prodFunc}[1]{\textlangle F#1\textrangle}
+\newcommand{\test}[1]{\textlangle T#1\textrangle}
+
+% Criteria command for wont-do-criteria
+\newcommand{\wont}[2]{\refsetcounter{datacount}{#1}\namedlabel{RW#1}{$\langle RW#1\rangle$} #2\\}
+
+% Criteria command for quality criteria
+\newcommand{\qualityReq}[2]{\refsetcounter{datacount}{#1}\namedlabel{Q#1}{$\langle Q#1\rangle$} #2\\}
+
+% Environment for ui (what is this for)?
+\newcounter{uicount}
+\newenvironment{ui}[2]{\refsetcounter{uicount}{#1}\textbf{#2} \namedlabel{UI#1}{$\langle UI#1\rangle$}\\}{}
+
+
+% Environment for class (what is this for)?
+\newcounter{classcount}
+\newenvironment{class}[2]{\refsetcounter{classcount}{#1}\textbf{#2}\namedlabel{CL#1}{$\langle CL#1\rangle$}\begin{description}\setlength{\itemsep}{-5pt}}{\end{description}}
+
+% Environment for entities (what is this for)?
+\newcounter{entitycount}
+\newenvironment{entity}[2]{\refsetcounter{entitycount}{#1}\textbf{#2} \namedlabel{E#1}{$\langle E#1\rangle$}\\}{}
+
+% Environment for components (what is this for)?
+\newcounter{componentcount}
+\newenvironment{component}[2]{\refsetcounter{componentcount}{#1}\textbf{Component \namedlabel{C#1}{$\langle C#1\rangle$}: #2}\\}{}
+
+% Environment for interface (what is this for)?
+\newcounter{interfacecount}
+\newenvironment{interface}[2]{\refsetcounter{interfacecount}{#1}\textbf{Schnittstelle \namedlabel{I#1}{$\langle I#1\rangle$}: #2}\\}{}
+
+% Environment for testcase (what is this for)?
+\newcounter{testcasecount}
+\newenvironment{testcase}[2]{\refsetcounter{testcasecount}{#1}\textbf{Test-Case #2}\namedlabel{T#1}{$\langle T#1\rangle$}\normalsize\begin{description}\setlength{\itemsep}{-5pt}}{\end{description}\hspace{7.5em}}

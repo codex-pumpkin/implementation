@@ -1,0 +1,155 @@
+%!TEX root = ../Implementation.tex
+
+\chapter{Test Strategy}
+
+This chapter describes the strategies applied during the development of the Codex system to ensure correctness, reliability, and long-term maintainability. Testing efforts focused primarily on unit testing of core components, the systematic use of mock objects to isolate dependencies, and controlled testing of user interface logic.
+
+Given the distributed architecture of Codex, test strategies were defined separately for server-side and client-side components while following common principles such as isolation, reproducibility, and deterministic execution.
+
+\section{Unit Testing}
+
+Throughout the implementation phase, unit tests were written for fundamental building blocks of both the server and client architecture.
+
+\subsection{Server-Side Unit Tests}
+
+On the server side, tests primarily target:
+
+\begin{itemize}
+    \item Business-layer managers (authentication, conversations, quota handling),
+    \item Security utilities (JWT validation, token lifecycle logic),
+    \item Error translation mechanisms,
+    \item Validation utilities and helper components.
+\end{itemize}
+
+Particular emphasis was placed on components responsible for authentication and request orchestration, as these represent critical functionality within the system. Security-related logic, including token validation and refresh behavior, was tested under both valid and invalid scenarios.
+
+The persistence layer was tested using isolated database sessions and controlled fixtures to ensure predictable behavior. External integrations, such as LLM clients or mail services, were mocked to avoid network dependencies during test execution.
+
+\subsection{Client-Side Unit Tests}
+
+On the client side, unit tests focus on:
+
+\begin{itemize}
+    \item The \texttt{AuthService} and token refresh coordination logic,
+    \item The centralized \texttt{NetworkClient} and retry mechanisms,
+    \item HTTP interceptor behavior,
+    \item DTO-to-domain mapping utilities,
+    \item Service-level state management (\texttt{conversations\$}, \texttt{quotaInfo\$}, etc.).
+\end{itemize}
+
+Special attention was given to testing concurrency-sensitive logic such as coordinated token refresh. Scenarios involving simultaneous 401 responses were simulated to verify correct queuing and replay behavior.
+
+The client’s reactive data flow was tested by observing emitted values of \texttt{Observable} streams and ensuring consistent state updates after mutation operations.
+
+\subsection{Coverage}
+
+Critical infrastructure components achieve high coverage due to their importance in authentication and request handling. Overall project coverage during active development was maintained at a moderate level to ensure stability without significantly slowing development velocity.
+
+A higher coverage target is planned for the final quality assurance phase, particularly for integration-heavy components.
+
+\section{Mock Objects and Dependency Isolation}
+
+Mock objects were used extensively to isolate components from external systems and to ensure deterministic test behavior.
+
+\subsection{Server-Side Mocking}
+
+On the server side, the following components were mocked:
+
+\begin{itemize}
+    \item Database repositories,
+    \item LLM client integrations,
+    \item Mail sending services,
+    \item External validation tools (e.g., simulator execution).
+\end{itemize}
+
+By depending on abstract interfaces rather than concrete implementations, business-layer components can be tested independently of infrastructure details. This enables simulation of both success and failure scenarios, including:
+
+\begin{itemize}
+    \item Invalid tokens,
+    \item Expired sessions,
+    \item LLM rate-limit errors,
+    \item Validation failures.
+\end{itemize}
+
+\subsection{Client-Side Mocking}
+
+On the client side, testing relies on:
+
+\begin{itemize}
+    \item Mock HTTP backends,
+    \item Mock implementations of the \texttt{TokenStore},
+    \item Simulated refresh responses,
+    \item Controlled environment configuration.
+\end{itemize}
+
+Additionally, a dedicated mock server was integrated into the development workflow. This mock backend mirrors the real API structure and allows integration tests to run without requiring a deployed backend system.
+
+The mock server supports deterministic testing of authentication flows, conversation handling, quota updates, and configuration management.
+
+\section{Integration Testing}
+
+While unit tests verify individual components in isolation, integration testing ensures correct interaction between subsystems.
+
+\subsection{Server Integration Tests}
+
+Integration tests verify:
+
+\begin{itemize}
+    \item Authentication flows (login, refresh, logout),
+    \item Conversation lifecycle operations,
+    \item Quota enforcement,
+    \item Error mapping consistency.
+\end{itemize}
+
+These tests use controlled test databases and run in isolated environments to avoid affecting production data.
+
+\subsection{Client Integration Tests}
+
+Client-side integration tests run against the mock server and verify:
+
+\begin{itemize}
+    \item End-to-end authentication flow,
+    \item Token refresh coordination,
+    \item Reactive state synchronization after API calls,
+    \item Proper error propagation to ViewModels.
+\end{itemize}
+
+This approach ensures that network contracts and client logic remain aligned.
+
+\section{Testing of User Interface Logic}
+
+Automated visual testing of graphical user interfaces was not implemented, as pixel-perfect UI comparison is technically complex and provides limited long-term value.
+
+Instead, the following strategy was adopted:
+
+\begin{itemize}
+    \item Manual verification based on requirement test cases,
+    \item Logical validation of ViewModel state transitions,
+    \item Automated tests targeting reactive logic rather than visual output.
+\end{itemize}
+
+ViewModels were tested independently from the rendering layer by validating:
+
+\begin{itemize}
+    \item Signal state transitions,
+    \item FormControl validation logic,
+    \item Event handler effects on internal state.
+\end{itemize}
+
+Future quality assurance efforts may include automated tests for verifying UI state transitions under simulated user interactions, focusing on logical correctness rather than visual appearance.
+
+\section{Overall Assessment}
+
+The Codex test strategy emphasizes:
+
+\begin{itemize}
+    \item Strong isolation of components,
+    \item Extensive use of mock objects,
+    \item Deterministic and reproducible test execution,
+    \item Separation between infrastructure and business logic,
+    \item Validation of reactive client behavior.
+\end{itemize}
+
+By combining unit tests, integration tests, and controlled UI validation, the system achieves a high degree of reliability while maintaining development agility.
+
+The applied testing approach supports long-term maintainability and provides a stable foundation for future extensions of both the server and client architecture.

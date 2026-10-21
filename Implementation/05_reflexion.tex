@@ -1,0 +1,25 @@
+%!TEX root = ../Implementation.tex
+
+\chapter{Reflection and Outlook on Quality Assurance}
+
+This final chapter reflects on the implementation phase of the Codex project and outlines the planned quality assurance activities. In addition to summarizing key observations, it discusses challenges encountered during development and derives lessons that may inform future projects.
+
+\section{Problems and Challenges}
+
+During the implementation phase, several challenges emerged that, in retrospect, could have been mitigated through more structured planning and earlier process standardization.
+
+\subsection{Branching and Version Control}
+
+In the early stages of development, version control was characterized by a large number of parallel branches without clearly defined ownership or responsibility. This lack of structure led to increased complexity in managing the repository and resulted in frequent merge conflicts.
+
+The absence of strict merging policies and automated checks made it difficult to maintain a consistent overview of the current development state. Merge conflicts required additional coordination effort and introduced the risk of unintentionally overwriting changes.
+
+\subsection{Time Planning and Estimation}
+
+Accurate time estimation proved to be another major challenge. Several core components required substantially more implementation effort than initially anticipated.
+
+One contributing factor was the assumption that experience gained from earlier features could be directly transferred to later components. While certain features appeared conceptually similar, their internal complexity varied significantly. This led to underestimation of design effort and implementation time.
+
+Furthermore, the adoption of unfamiliar technologies introduced an additional learning curve. Team members had limited prior experience with some of the core frameworks and libraries used in Codex. In some cases, inconsistent or outdated documentation from third-party libraries further slowed progress and required additional experimentation. Most notably was PySpice.
+
+Overall, these factors led to longer development cycles for certain features. Future projects would benefit from more conservative estimation strategies and explicit buffers for technological onboarding and integration risks.

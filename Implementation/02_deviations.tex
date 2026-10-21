@@ -1,0 +1,195 @@
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\omark}{\ding{108}}
+\chapter{Requirements}
+The following shows a detailed overview about which requirements declared in the Requirement Analysis have been implemented.
+
+\section{Must Criteria}
+All Must criteria have been fully implemented within the CodeX system.
+
+\begin{longtable}{p{1.2cm} p{11cm} p{1.5cm}}
+\caption{Implementation Status of Must Criteria}
+\label{tab:must-criteria} \\
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endfirsthead
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endhead
+
+RM1 & The system must provide a web interface that allows natural language to be converted into a snippet of code. The target DSL can be selected from available options and the generated code can be exported as a file. & \cmark \\
+
+RM2 & The system must provide SPICE as one option of its selectable DSLs. & \cmark \\
+
+RM3 & SPICE conversations must include a visualization of the respective circuit. & \cmark \\
+
+RM4 & Every conversation must have a name. & \cmark \\
+
+RM5 & The system must support LLM requests using a Retrieval-Augmented Generation (RAG) approach. Retrieved data must be stored in a secure database that respects intellectual property constraints. & \cmark \\
+
+RM6 & The system must integrate a validation back-end to validate the generated circuit for SPICE conversations. & \cmark \\
+
+RM7 & The system must allow adding and removing separate LLM models together with their OpenAI API URL. When a request is made, the user must be able to select the model with which the request will be performed. & \cmark \\
+
+\bottomrule
+\end{longtable}
+
+\section{Should Criteria}
+Most Should Criteria were implemented.
+RS2 was skipped due to time-pressure.
+RS4 was implemented only as a client-side check.
+RS8 was partially implemented, as no error message is displayed in that case.
+
+\begin{longtable}{p{1.2cm} p{11cm} p{1.5cm}}
+\caption{Implementation Status of Should Criteria}
+\label{tab:should-criteria} \\
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endfirsthead
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endhead
+
+RS1 & The circuit visualization for SPICE should be interactive. & \cmark \\
+
+RS2 & The interface of the system should allow users to cancel a pending request. & \xmark \\
+
+RS3 & Users should be able to sign up, log in, and log out using a username (or email) and password. & \cmark \\
+
+RS4 & A strict password complexity policy should be implemented. & \omark \\
+
+RS5 & The system should allow users to securely update their profile data. & \cmark \\
+
+RS6 & The system should provide a secure mechanism for users to recover their accounts in case of lost credentials. & \cmark \\
+
+RS7 & Conversations should be stored with respect to the account that created them and be visible only to that account. & \cmark \\
+
+RS8 & If the LLM fails to generate working code after multiple retries, the system should stop further attempts and display an appropriate error message indicating the failure. & \cmark \\
+
+RS9 & The system should provide a list of all previous conversations and allow users to view them. & \cmark \\
+
+RS10 & Every conversation should be able to be marked as deleted and should not be shown in the overview afterwards. & \cmark \\
+
+\bottomrule
+\end{longtable}
+\section{Could Criteria}
+
+Most Could Criteria were implemented.
+RC1 was skipped due to time-pressure.
+RC7 was implemented only as a client-side check.
+RC12 was partially implemented, as no error message is displayed in that case.
+
+\begin{longtable}{p{1.2cm} p{11cm} p{1.5cm}}
+\caption{Implementation Status of Could Criteria}
+\label{tab:could-criteria} \\
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endfirsthead
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endhead
+
+RC1 & The system could integrate a simulation back-end to simulate the generated circuit for SPICE conversations. & \cmark \\
+
+RC2 & The system could accept follow-up instructions on conversations. & \cmark \\
+
+RC3 & The system could provide more DSL options than only SPICE. & \cmark \\
+
+RC4 & Every account could be associated with the role Admin or Member. Each role could have a configurable upper bound of requests per month set as a server parameter. & \cmark \\
+
+RC5 & The role request upper bounds could be configured by administrators via the web interface. & \cmark \\
+
+RC6 & The web interface could be offered in multiple languages, at least German and English. & \cmark \\
+
+RC7 & If supported by the DSL, the generated code output could be prettified using syntax highlighting. & \xmark \\
+
+RC8 & The front-end could allow users to pin a conversation so that it remains at the top of the conversation list. & \cmark \\
+
+RC9 & During registration, the user’s email could be confirmed via a verification link or code. Registration would not be completed until confirmation. Changing the email would automatically trigger a new confirmation. & \cmark \\
+
+RC10 & The system could support OAuth 2.0 authentication to allow login via trusted providers such as Google. & \cmark \\
+
+RC11 & The software could provide a dark mode as an alternative theme. & \cmark \\
+
+RC12 & The system could integrate with cloud storage providers to save or share generated code snippets. & \xmark \\
+
+RC13 & The application could allow users to search conversations by name. & \cmark \\
+
+RC14 & The front-end could indicate to the user that a request is currently being processed. & \cmark \\
+
+RC15 & The software could allow users to download generated code as a file. & \cmark \\
+
+RC16 & The software could provide admin-only analytics on usage (e.g., daily active users) not visible to regular users. & \xmark \\
+
+RC17 & Users could upload and display a profile picture associated with their account. & \cmark \\
+
+\bottomrule
+\end{longtable}
+
+\section{QUality Criteria}
+More than half of the quality criteria is inherently met.
+Criteria Q30, Q90 and Q130 were found to be out-of-scope of the implementation and are the responsibility of the system administrator.
+Q50 and Q110 were not implemented due to time pressure.
+Q80 was found to not be implementable due to 3rd-party libraries producing non-preventable errors even during normal operation.
+
+\begin{longtable}{p{1.2cm} p{11cm} p{1.5cm}}
+\caption{Implementation Status of Could Criteria}
+\label{tab:could-criteria} \\
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endfirsthead
+
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Fulfilled} \\
+\midrule
+\endhead
+
+Q10 & Database injection must not be possible. & \cmark \\
+
+Q20 & No personally identifiable information (PII) must be shared with external services. & \cmark \\
+
+Q30 & The code generation must not take longer than 30 seconds. In case it takes longer, that
+generation is counted as failed. & \omark \\
+
+Q40 & All user passwords should only be persisted using a secure, one-way encryption algo-
+rithm. & \cmark \\
+
+Q50 & The system should limit concurrent users to prevent overloading the server. & \xmark \\
+
+Q60 & All server-side logging should be performed using a logging framework to ensure struc-
+tured logs, maintainability and effective debugging. & \cmark \\
+
+Q70 & The front-end should handle all operations without runtime errors. & \cmark \\
+
+Q80 & The front-end should not produce any errors in the browser console during normal
+operation. & \xmark \\
+
+Q90 & All communication between front-end and back-end should be encrypted. & \omark \\
+
+Q100 & The system could be deployable using containerization. & \cmark \\
+
+Q110 & The system could allow integration with CI/CD pipelines to automatically test or
+deploy generated code. & \xmark \\
+
+Q120 & The interface of the system should be responsive on the display sizes Mobile Phone,
+Tablet and Desktop. It should also be accessible according to the Material Accessibility Guidelines. & \cmark \\
+
+Q130 & The LLM and Database should be stored on a secure server and can only be accessed
+by authorized actors. & \omark \\
+
+\bottomrule
+\end{longtable}
